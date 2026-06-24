@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Library Management System</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #1a3c5e;
+    --accent:  #2e86c1;
+    --green:   #1e8449;
+    --red:     #c0392b;
+    --orange:  #d35400;
+    --bg:      #f0f4f8;
+    --card:    #ffffff;
+    --border:  #dce3ea;
+    --text:    #2c3e50;
+    --muted:   #7f8c8d;
+    --sidebar-w: 220px;
+  }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w); background: var(--primary); color: #fff;
+    display: flex; flex-direction: column; flex-shrink: 0; position: fixed;
+    height: 100vh; top: 0; left: 0; z-index: 100;
+  }
+  #sidebar .logo {
+    padding: 22px 18px 16px; font-size: 17px; font-weight: 700;
+    border-bottom: 1px solid rgba(255,255,255,.15); letter-spacing: .4px;
+    line-height: 1.3;
+  }
+  #sidebar .logo span { font-size: 11px; font-weight: 400; opacity: .7; display: block; margin-top: 2px; }
+  #sidebar nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+  #sidebar nav a {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 18px; color: rgba(255,255,255,.82); text-decoration: none;
+    font-size: 14px; cursor: pointer; transition: background .15s;
+  }
+  #sidebar nav a:hover, #sidebar nav a.active {
+    background: rgba(255,255,255,.13); color: #fff;
+  }
+  #sidebar nav a .ico { font-size: 18px; }
+
+  /* ── Main ── */
+  #main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── Top bar ── */
+  #topbar {
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 14px 28px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 90;
+  }
+  #topbar h1 { font-size: 20px; font-weight: 600; }
+  #topbar .badge { background: var(--accent); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+
+  /* ── Content ── */
+  #content { padding: 24px 28px; flex: 1; }
+
+  /* ── Dashboard cards ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--card); border-radius: 10px; padding: 20px 18px;
+    border-left: 4px solid var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  }
+  .stat-card .num { font-size: 32px; font-weight: 700; color: var(--accent); }
+  .stat-card .label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .stat-card.green { border-color: var(--green); } .stat-card.green .num { color: var(--green); }
+  .stat-card.red   { border-color: var(--red);   } .stat-card.red   .num { color: var(--red);   }
+  .stat-card.orange{ border-color: var(--orange);} .stat-card.orange .num { color: var(--orange);}
+
+  /* ── Section ── */
+  .section { background: var(--card); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.07); margin-bottom: 24px; }
+  .section-head {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  }
+  .section-head h2 { font-size: 16px; font-weight: 600; }
+  .section-body { padding: 20px; }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px;
+    cursor: pointer; font-family: inherit; transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary  { background: var(--accent); color: #fff; }
+  .btn-success  { background: var(--green);  color: #fff; }
+  .btn-danger   { background: var(--red);    color: #fff; }
+  .btn-warning  { background: var(--orange); color: #fff; }
+  .btn-sm       { padding: 5px 10px; font-size: 12px; }
+
+  /* ── Form ── */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; font-family: inherit; outline: none; background: #fafbfc;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); background: #fff; }
+  .form-actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* ── Search bar ── */
+  .search-bar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .search-bar input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+
+  /* ── Table ── */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: var(--bg); }
+  th { padding: 10px 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f7fafd; }
+
+  /* ── Badges ── */
+  .tag { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .tag-green  { background: #d5f5e3; color: #1e8449; }
+  .tag-red    { background: #fadbd8; color: #c0392b; }
+  .tag-orange { background: #fdebd0; color: #d35400; }
+  .tag-blue   { background: #d6eaf8; color: #2e86c1; }
+  .tag-gray   { background: #eaecee; color: #555; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; padding: 12px 20px;
+    border-radius: 8px; color: #fff; font-size: 14px; font-weight: 500;
+    opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 999;
+  }
+  #toast.show { opacity: 1; }
+  #toast.ok  { background: var(--green); }
+  #toast.err { background: var(--red); }
+
+  /* ── Tab sections ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── Empty ── */
+  .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<div id="sidebar">
+  <div class="logo">📚 LibraryMS <span>CS2231 DBMS Project</span></div>
+  <nav>
+    <a class="active" onclick="showPage('dashboard')"><span class="ico">🏠</span> Dashboard</a>
+    <a onclick="showPage('books')"><span class="ico">📖</span> Books</a>
+    <a onclick="showPage('members')"><span class="ico">👥</span> Members</a>
+    <a onclick="showPage('borrow')"><span class="ico">📤</span> Borrow Book</a>
+    <a onclick="showPage('returns')"><span class="ico">📥</span> Returns</a>
+    <a onclick="showPage('fines')"><span class="ico">💰</span> Fines</a>
+    <a onclick="showPage('reports')"><span class="ico">📊</span> Reports</a>
+  </nav>
+</div>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<div id="main">
+  <div id="topbar">
+    <h1 id="page-title">Dashboard</h1>
+    <span class="badge">Library Management System</span>
+  </div>
+
+  <div id="content">
+
+    <!-- ── DASHBOARD ── -->
+    <div id="page-dashboard" class="page active">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num" id="s-books">–</div><div class="label">Total Books</div></div>
+        <div class="stat-card green"><div class="num" id="s-members">–</div><div class="label">Active Members</div></div>
+        <div class="stat-card blue" style="border-color:#2e86c1"><div class="num" id="s-borrowed">–</div><div class="label">Currently Borrowed</div></div>
+        <div class="stat-card red"><div class="num" id="s-overdue">–</div><div class="label">Overdue Books</div></div>
+        <div class="stat-card orange"><div class="num" id="s-fines">–</div><div class="label">Pending Fines (Rs.)</div></div>
+      </div>
+      <div class="section">
+        <div class="section-head"><h2>Active Borrowings</h2></div>
+        <div class="section-body">
+          <div class="tbl-wrap" id="dash-borrow-tbl"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BOOKS ── -->
+    <div id="page-books" class="page">
+      <!-- Add Book Form -->
+      <div class="section">
+        <div class="section-head"><h2>Add New Book</h2></div>
+        <div class="section-body">
+          <div class="form-grid">
+            <div class="form-group"><label>ISBN</label><input id="b-isbn" placeholder="e.g. 978-0-13-468599-1"/></div>
+            <div class="form-group"><label>Title</label><input id="b-title" placeholder="Book title"/></div>
+            <div class="form-group"><label>Author</label><select id="b-author"></select></div>
+            <div class="form-group"><label>Category</label><select id="b-cat"></select></div>
+            <div class="form-group"><label>Publish Year</label><input id="b-year" type="number" placeholder="2024"/></div>
+            <div class="form-group"><label>Total Copies</label><input id="b-copies" type="number" value="1"/></div>
+            <div class="form-group"><label>Shelf Location</label><input id="b-shelf" placeholder="e.g. A1"/></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="addBook()">➕ Add Book</button>
+          </div>
+        </div>
+      </div>
+      <!-- Book List -->
+      <div class="section">
+        <div class="section-head">
+          <h2>All Books</h2>
+          <div class="search-bar" style="margin:0">
+            <input id="book-search" placeholder="Search title, author, ISBN…" oninput="searchBooks()"/>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="tbl-wrap" id="books-tbl"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MEMBERS ── -->
+    <div id="page-members" class="page">
+      <div class="section">
+        <div class="section-head"><h2>Register New Member</h2></div>
+        <div class="section-body">
+          <div class="form-grid">
+            <div class="form-group"><label>Full Name</label><input id="m-name" placeholder="Full name"/></div>
+            <div class="form-group"><label>Email</label><input id="m-email" type="email" placeholder="email@example.com"/></div>
+            <div class="form-group"><label>Phone</label><input id="m-phone" placeholder="0300-0000000"/></div>
+            <div class="form-group"><label>Member Type</label>
+              <select id="m-type">
+                <option>Student</option><option>Faculty</option><option>Public</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Address</label><input id="m-addr" placeholder="Address (optional)"/></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="addMember()">➕ Register Member</button>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head"><h2>All Members</h2></div>
+        <div class="section-body">
+          <div class="tbl-wrap" id="members-tbl"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BORROW ── -->
+    <div id="page-borrow" class="page">
+      <div class="section">
+        <div class="section-head"><h2>Issue Book to Member</h2></div>
+        <div class="section-body">
+          <div class="form-grid">
+            <div class="form-group"><label>Select Member</label><select id="br-member"></select></div>
+            <div class="form-group"><label>Select Book</label><select id="br-book"></select></div>
+            <div class="form-group"><label>Due Days</label><input id="br-days" type="number" value="14" min="1" max="60"/></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-success" onclick="borrowBook()">📤 Issue Book</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RETURNS ── -->
+    <div id="page-returns" class="page">
+      <div class="section">
+        <div class="section-head"><h2>Currently Borrowed Books</h2></div>
+        <div class="section-body">
+          <div class="tbl-wrap" id="returns-tbl"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FINES ── -->
+    <div id="page-fines" class="page">
+      <div class="section">
+        <div class="section-head"><h2>Fines Management</h2></div>
+        <div class="section-body">
+          <div class="tbl-wrap" id="fines-tbl"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REPORTS ── -->
+    <div id="page-reports" class="page">
+      <div class="section">
+        <div class="section-head"><h2>📊 Overdue Report</h2></div>
+        <div class="section-body">
+          <div class="tbl-wrap" id="rep-overdue-tbl"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head"><h2>🏆 Most Popular Books</h2></div>
+        <div class="section-body">
+          <div class="tbl-wrap" id="rep-popular-tbl"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:5000/api';
+
+// ── Toast ──────────────────────────────────────────────────
+function toast(msg, ok = true) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + (ok ? 'ok' : 'err');
+  setTimeout(() => t.className = '', 3000);
+}
+
+// ── Navigation ─────────────────────────────────────────────
+const pageTitles = {
+  dashboard: 'Dashboard', books: 'Books', members: 'Members',
+  borrow: 'Borrow Book', returns: 'Returns', fines: 'Fines', reports: 'Reports'
+};
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#sidebar nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('#sidebar nav a').forEach(a => {
+    if (a.getAttribute('onclick')?.includes(id)) a.classList.add('active');
+  });
+  document.getElementById('page-title').textContent = pageTitles[id];
+  loadPage(id);
+}
+
+function loadPage(id) {
+  if (id === 'dashboard')  loadDashboard();
+  if (id === 'books')      { loadBooks(); loadAuthorCatDropdowns(); }
+  if (id === 'members')    loadMembers();
+  if (id === 'borrow')     loadBorrowDropdowns();
+  if (id === 'returns')    loadReturns();
+  if (id === 'fines')      loadFines();
+  if (id === 'reports')    loadReports();
+}
+
+// ── Generic fetch helpers ──────────────────────────────────
+async function get(url) {
+  const r = await fetch(API + url); return r.json();
+}
+async function post(url, body) {
+  const r = await fetch(API + url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  return r.json();
+}
+async function put(url, body) {
+  const r = await fetch(API + url, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  return r.json();
+}
+async function del(url) {
+  const r = await fetch(API + url, { method: 'DELETE' }); return r.json();
+}
+
+// ── Build table from array ─────────────────────────────────
+function buildTable(rows, cols, extraCol = null) {
+  if (!rows || rows.length === 0) return '<div class="empty">No records found.</div>';
+  let h = '<div class="tbl-wrap"><table><thead><tr>';
+  cols.forEach(c => h += `<th>${c.label}</th>`);
+  if (extraCol) h += `<th>${extraCol.label}</th>`;
+  h += '</tr></thead><tbody>';
+  rows.forEach(row => {
+    h += '<tr>';
+    cols.forEach(c => {
+      let val = row[c.key] ?? '';
+      if (c.render) val = c.render(val, row);
+      h += `<td>${val}</td>`;
+    });
+    if (extraCol) h += `<td>${extraCol.render(row)}</td>`;
+    h += '</tr>';
+  });
+  return h + '</tbody></table></div>';
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+async function loadDashboard() {
+  const s = await get('/reports/dashboard');
+  document.getElementById('s-books').textContent    = s.TotalBooks ?? 0;
+  document.getElementById('s-members').textContent  = s.ActiveMembers ?? 0;
+  document.getElementById('s-borrowed').textContent = s.CurrentlyBorrowed ?? 0;
+  document.getElementById('s-overdue').textContent  = s.OverdueCount ?? 0;
+  document.getElementById('s-fines').textContent    = Number(s.PendingFines ?? 0).toFixed(0);
+
+  const rows = await get('/borrowings');
+  document.getElementById('dash-borrow-tbl').innerHTML = buildTable(rows, [
+    { key: 'MemberName', label: 'Member' },
+    { key: 'BookTitle',  label: 'Book' },
+    { key: 'BorrowDate', label: 'Borrow Date', render: v => fmtDate(v) },
+    { key: 'DueDate',    label: 'Due Date',    render: v => fmtDate(v) },
+    { key: 'DaysOverdue',label: 'Overdue Days',render: (v,r) => v > 0 ? `<span class="tag tag-red">${v} days</span>` : '<span class="tag tag-green">On time</span>' },
+    { key: 'Status',     label: 'Status',      render: v => statusTag(v) },
+  ]);
+}
+
+// ── BOOKS ─────────────────────────────────────────────────
+async function loadBooks() {
+  const rows = await get('/books');
+  renderBooks(rows);
+}
+function renderBooks(rows) {
+  document.getElementById('books-tbl').innerHTML = buildTable(rows, [
+    { key: 'ISBN',           label: 'ISBN' },
+    { key: 'Title',          label: 'Title' },
+    { key: 'AuthorName',     label: 'Author' },
+    { key: 'CategoryName',   label: 'Category' },
+    { key: 'PublishYear',    label: 'Year' },
+    { key: 'AvailableCopies',label: 'Available', render: (v,r) => `${v}/${r.TotalCopies}` },
+    { key: 'ShelfLocation',  label: 'Shelf' },
+    { key: 'Availability',   label: 'Status', render: v => v === 'Available' ? '<span class="tag tag-green">Available</span>' : '<span class="tag tag-red">Unavailable</span>' },
+  ], {
+    label: 'Actions',
+    render: row => `<button class="btn btn-danger btn-sm" onclick="deleteBook(${row.BookID})">Delete</button>`
+  });
+}
+async function searchBooks() {
+  const q = document.getElementById('book-search').value.trim();
+  if (!q) { loadBooks(); return; }
+  const rows = await get('/books/search?q=' + encodeURIComponent(q));
+  renderBooks(rows);
+}
+async function addBook() {
+  const d = {
+    isbn: v('b-isbn'), title: v('b-title'), authorId: v('b-author'),
+    categoryId: v('b-cat'), publishYear: v('b-year'),
+    totalCopies: v('b-copies'), shelfLocation: v('b-shelf')
+  };
+  if (!d.isbn || !d.title) { toast('ISBN and Title are required.', false); return; }
+  const r = await post('/books', d);
+  if (r.message) { toast(r.message); loadBooks(); clearForm(['b-isbn','b-title','b-shelf']); }
+  else toast(r.error || 'Error', false);
+}
+async function deleteBook(id) {
+  if (!confirm('Delete this book?')) return;
+  const r = await del('/books/' + id);
+  if (r.message) { toast(r.message); loadBooks(); }
+  else toast(r.error || 'Error', false);
+}
+
+// ── AUTHORS & CATEGORIES dropdowns ────────────────────────
+async function loadAuthorCatDropdowns() {
+  const [authors, cats] = await Promise.all([get('/authors'), get('/categories')]);
+  fillSelect('b-author', authors, 'AuthorID', 'Name');
+  fillSelect('b-cat',    cats,    'CategoryID', 'CategoryName');
+}
+
+// ── MEMBERS ───────────────────────────────────────────────
+async function loadMembers() {
+  const rows = await get('/members');
+  document.getElementById('members-tbl').innerHTML = buildTable(rows, [
+    { key: 'MemberID',  label: '#' },
+    { key: 'FullName',  label: 'Name' },
+    { key: 'Email',     label: 'Email' },
+    { key: 'Phone',     label: 'Phone' },
+    { key: 'MemberType',label: 'Type', render: v => `<span class="tag tag-blue">${v}</span>` },
+    { key: 'JoinDate',  label: 'Joined', render: v => fmtDate(v) },
+    { key: 'IsActive',  label: 'Status', render: v => v ? '<span class="tag tag-green">Active</span>' : '<span class="tag tag-gray">Inactive</span>' },
+  ], {
+    label: 'Actions',
+    render: row => `<button class="btn btn-danger btn-sm" onclick="deactivateMember(${row.MemberID})" ${!row.IsActive?'disabled':''}>Deactivate</button>`
+  });
+}
+async function addMember() {
+  const d = { fullName: v('m-name'), email: v('m-email'), phone: v('m-phone'), address: v('m-addr'), memberType: v('m-type') };
+  if (!d.fullName || !d.email) { toast('Name and Email required.', false); return; }
+  const r = await post('/members', d);
+  if (r.message) { toast(r.message); loadMembers(); clearForm(['m-name','m-email','m-phone','m-addr']); }
+  else toast(r.error || 'Error', false);
+}
+async function deactivateMember(id) {
+  if (!confirm('Deactivate this member?')) return;
+  const r = await del('/members/' + id);
+  if (r.message) { toast(r.message); loadMembers(); }
+}
+
+// ── BORROW ────────────────────────────────────────────────
+async function loadBorrowDropdowns() {
+  const [members, books] = await Promise.all([get('/members'), get('/books')]);
+  fillSelect('br-member', members.filter(m => m.IsActive), 'MemberID', 'FullName');
+  const avail = books.filter(b => b.AvailableCopies > 0);
+  fillSelect('br-book', avail, 'BookID', 'Title');
+}
+async function borrowBook() {
+  const d = { bookId: v('br-book'), memberId: v('br-member'), dueDays: v('br-days') };
+  if (!d.bookId || !d.memberId) { toast('Select member and book.', false); return; }
+  const r = await post('/borrowings', d);
+  if (r.Result === 'SUCCESS') { toast(r.Message); loadBorrowDropdowns(); }
+  else toast(r.Message || 'Error', false);
+}
+
+// ── RETURNS ───────────────────────────────────────────────
+async function loadReturns() {
+  const rows = await get('/borrowings');
+  document.getElementById('returns-tbl').innerHTML = buildTable(rows, [
+    { key: 'BorrowID',   label: 'ID' },
+    { key: 'MemberName', label: 'Member' },
+    { key: 'BookTitle',  label: 'Book' },
+    { key: 'BorrowDate', label: 'Issued',   render: v => fmtDate(v) },
+    { key: 'DueDate',    label: 'Due Date', render: v => fmtDate(v) },
+    { key: 'DaysOverdue',label: 'Overdue',  render: v => v > 0 ? `<span class="tag tag-red">${v}d late</span>` : '<span class="tag tag-green">On time</span>' },
+  ], {
+    label: 'Action',
+    render: row => `<button class="btn btn-success btn-sm" onclick="returnBook(${row.BorrowID})">📥 Return</button>`
+  });
+}
+async function returnBook(id) {
+  if (!confirm('Mark this book as returned?')) return;
+  const r = await fetch(API + '/borrowings/' + id + '/return', { method: 'POST' });
+  const res = await r.json();
+  if (res.Result === 'SUCCESS') { toast(res.Message); loadReturns(); }
+  else toast(res.Message || 'Error', false);
+}
+
+// ── FINES ─────────────────────────────────────────────────
+async function loadFines() {
+  const rows = await get('/fines');
+  document.getElementById('fines-tbl').innerHTML = buildTable(rows, [
+    { key: 'FineID',     label: '#' },
+    { key: 'FullName',   label: 'Member' },
+    { key: 'Title',      label: 'Book' },
+    { key: 'DueDate',    label: 'Due Date',    render: v => fmtDate(v) },
+    { key: 'FineAmount', label: 'Fine (Rs.)',  render: v => 'Rs. ' + Number(v).toFixed(0) },
+    { key: 'PaidStatus', label: 'Status', render: v => v ? '<span class="tag tag-green">Paid</span>' : '<span class="tag tag-red">Unpaid</span>' },
+  ], {
+    label: 'Action',
+    render: row => !row.PaidStatus
+      ? `<button class="btn btn-success btn-sm" onclick="payFine(${row.FineID})">Mark Paid</button>`
+      : `<span class="tag tag-gray">Cleared</span>`
+  });
+}
+async function payFine(id) {
+  const r = await put('/fines/' + id + '/pay');
+  if (r.message) { toast(r.message); loadFines(); }
+}
+
+// ── REPORTS ───────────────────────────────────────────────
+async function loadReports() {
+  const [overdue, popular] = await Promise.all([get('/reports/overdue'), get('/reports/popular')]);
+  document.getElementById('rep-overdue-tbl').innerHTML = buildTable(overdue, [
+    { key: 'FullName',    label: 'Member' },
+    { key: 'Email',       label: 'Email' },
+    { key: 'Phone',       label: 'Phone' },
+    { key: 'Title',       label: 'Book' },
+    { key: 'DueDate',     label: 'Due Date', render: v => fmtDate(v) },
+    { key: 'DaysOverdue', label: 'Days Late', render: v => `<span class="tag tag-red">${v} days</span>` },
+  ]);
+  document.getElementById('rep-popular-tbl').innerHTML = buildTable(popular, [
+    { key: 'Title',         label: 'Book Title' },
+    { key: 'Author',        label: 'Author' },
+    { key: 'TimesBorrowed', label: 'Times Borrowed', render: v => `<span class="tag tag-blue">${v}</span>` },
+  ]);
+}
+
+// ── Utilities ──────────────────────────────────────────────
+function v(id) { return document.getElementById(id)?.value ?? ''; }
+function clearForm(ids) { ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); }
+function fmtDate(str) {
+  if (!str) return '–';
+  const d = new Date(str);
+  return isNaN(d) ? str : d.toLocaleDateString('en-PK', { day:'2-digit', month:'short', year:'numeric' });
+}
+function statusTag(s) {
+  const map = { Borrowed:'tag-blue', Returned:'tag-green', Overdue:'tag-red' };
+  return `<span class="tag ${map[s]||'tag-gray'}">${s}</span>`;
+}
+function fillSelect(id, rows, valKey, labelKey) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = rows.map(r => `<option value="${r[valKey]}">${r[labelKey]}</option>`).join('');
+}
+
+// ── Initial load ───────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>
